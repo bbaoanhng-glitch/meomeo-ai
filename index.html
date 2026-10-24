@@ -1644,31 +1644,11 @@
         // CÁCH 2 (Tùy chọn): Nếu bạn dùng Discord, dán link Webhook vào đây để nhận thông báo đẩy tức thì:
         const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1563602844399960084/B69U52NuboGcM0kUP6_gTKR1PCzZKZQ-xAlj24FskX2-AxCSLVCtKyPSgKCleRIJXqzj"; 
 
-        // =========================================================
-        // CẤU HÌNH NHẬN THÔNG BÁO FEEDBACK TỰ ĐỘNG CHO ADMIN
-        // =========================================================
-        const ADMIN_EMAIL = "dien_gmail_cua_ban_vao_day@gmail.com"; 
-        const DISCORD_WEBHOOK_URL = ""; 
-
-        // =========================================================
-        // CẤU HÌNH NHẬN THÔNG BÁO FEEDBACK TỰ ĐỘNG CHO ADMIN
-        // =========================================================
-        // CÁCH 1: Điền Gmail của bạn vào đây để nhận Feedback qua Email:
-        const ADMIN_EMAIL = "dien_gmail_cua_ban_vao_day@gmail.com"; 
-
-        // CÁCH 2 (Tùy chọn): Nếu bạn dùng Discord, dán link Webhook vào đây để nhận thông báo đẩy tức thì:
-        const DISCORD_WEBHOOK_URL = ""; 
-
-        // =========================================================
-        // CẤU HÌNH NHẬN THÔNG BÁO FEEDBACK TỰ ĐỘNG CHO ADMIN
-        // =========================================================
-        const ADMIN_EMAIL = "dien_gmail_cua_ban_vao_day@gmail.com"; 
-        const DISCORD_WEBHOOK_URL = ""; 
-
-        function submitOneWayFeedback(event) {
+        async function submitOneWayFeedback(event) {
             event.preventDefault();
             const charInput = document.getElementById('fbCharName');
             const contentInput = document.getElementById('fbContent');
+            const submitBtn = event.target.querySelector('button[type="submit"]');
 
             const charName = charInput.value.trim();
             const content = contentInput.value.trim();
@@ -1677,52 +1657,70 @@
             const now = new Date();
             const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')} - ${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear()}`;
 
-            // 1. Lưu ngay vào hộp thư dự phòng trên web
+            // Đổi trạng thái nút để khách biết đang gửi
+            const oldBtnHTML = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>Đang gửi...</span>`;
+
+            // 1. Lưu dự phòng vào hộp thư trên web
             feedbacks.unshift({ id: 'fb_' + Date.now(), charName, content, time: timeStr });
             saveFeedbacks();
             updateFeedbackInboxBadge();
 
-            // 2. ĐÓNG BẢNG & BÁO THÀNH CÔNG NGAY LẬP TỨC (0.1 GIÂY - KHÔNG BẮT KHÁCH CHỜ)
+            try {
+                // 2. Gửi tự động về Gmail của bạn (Nếu bạn đã điền Gmail)
+                if (ADMIN_EMAIL && ADMIN_EMAIL.includes("@") && !ADMIN_EMAIL.includes("dien_gmail")) {
+                    await fetch(`https://formsubmit.co/ajax/${ADMIN_EMAIL.trim()}`, {
+                        method: "POST",
+                        headers: { 
+                            "Content-Type": "application/json",
+                            "Accept": "application/json"
+                        },
+                        body: JSON.stringify({
+                            _subject: `✦ Feedback mới cho [${charName}] từ web mèo méo!`,
+                            "Tên Character": charName,
+                            "Nội dung Feedback": content,
+                            "Thời gian gửi": timeStr,
+                            _template: "table"
+                        })
+                    });
+                }
+
+                // 3. Gửi tự động về Discord của bạn (Nếu bạn có dán link Discord Webhook)
+                if (DISCORD_WEBHOOK_URL && DISCORD_WEBHOOK_URL.startsWith("https://discord.com/api/webhooks/")) {
+                    await fetch(DISCORD_WEBHOOK_URL.trim(), {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            username: "mèo méo ✦ Feedback",
+                            embeds: [{
+                                title: "💌 Có Feedback mới từ khách trên web!",
+                                color: 16777215,
+                                fields: [
+                                    { name: "✦ Tên Character", value: charName, inline: true },
+                                    { name: "🕒 Thời gian", value: timeStr, inline: true },
+                                    { name: "📝 Nội dung Feedback", value: content }
+                                ]
+                            }]
+                        })
+                    });
+                }
+            } catch (err) {
+                console.log("Đã lưu feedback:", err);
+            }
+
+            // Khôi phục nút, đóng bảng và báo thành công cho khách
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = oldBtnHTML;
             closeFeedbackModal();
             showToast('Đã gửi Feedback thành công tới mèo méo! Cảm ơn bạn ✦');
+        }
 
-            // 3. Tự động gửi ngầm về Gmail của bạn ở phía sau
-            if (ADMIN_EMAIL && ADMIN_EMAIL.includes("@") && !ADMIN_EMAIL.includes("dien_gmail")) {
-                fetch(`https://formsubmit.co/ajax/${ADMIN_EMAIL.trim()}`, {
-                    method: "POST",
-                    headers: { 
-                        "Content-Type": "application/json",
-                        "Accept": "application/json"
-                    },
-                    body: JSON.stringify({
-                        _subject: `✦ Feedback mới cho [${charName}] từ web mèo méo!`,
-                        "Tên Character": charName,
-                        "Nội dung Feedback": content,
-                        "Thời gian gửi": timeStr,
-                        _template: "table"
-                    })
-                }).catch(() => {});
-            }
-
-            // 4. Tự động gửi ngầm về Discord của bạn ở phía sau (nếu có dùng)
-            if (DISCORD_WEBHOOK_URL && DISCORD_WEBHOOK_URL.startsWith("https://discord.com/api/webhooks/")) {
-                fetch(DISCORD_WEBHOOK_URL.trim(), {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        username: "mèo méo ✦ Feedback",
-                        embeds: [{
-                            title: "💌 Có Feedback mới từ khách trên web!",
-                            color: 16777215,
-                            fields: [
-                                { name: "✦ Tên Character", value: charName, inline: true },
-                                { name: "🕒 Thời gian", value: timeStr, inline: true },
-                                { name: "📝 Nội dung Feedback", value: content }
-                            ]
-                        }]
-                    })
-                }).catch(() => {});
-            }
+        function deleteFeedbackItem(fbId) {
+            feedbacks = feedbacks.filter(f => f.id !== fbId);
+            saveFeedbacks();
+            updateFeedbackInboxBadge();
+            renderFeedbackInbox();
         }
 
         // FILTER, SEARCH & CHARACTER GRID
@@ -2169,7 +2167,7 @@
             showToast('Đã xóa nhân vật.');
         }
 
-        /// TÍNH NĂNG ĐẶC BIỆT: XUẤT FILE INDEX.HTML CHUẨN (TỰ ĐỘNG ẨN ADMIN KHI KHÁCH VÀO)
+        // TÍNH NĂNG ĐẶC BIỆT: XUẤT FILE INDEX.HTML CHUẨN (TỰ ĐỘNG ẨN ADMIN KHI KHÁCH VÀO)
         function exportReadyWebFile() {
             if (!isAdmin) return;
 
