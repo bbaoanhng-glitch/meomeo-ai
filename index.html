@@ -1650,6 +1650,21 @@
         const ADMIN_EMAIL = "dien_gmail_cua_ban_vao_day@gmail.com"; 
         const DISCORD_WEBHOOK_URL = ""; 
 
+        // =========================================================
+        // CẤU HÌNH NHẬN THÔNG BÁO FEEDBACK TỰ ĐỘNG CHO ADMIN
+        // =========================================================
+        // CÁCH 1: Điền Gmail của bạn vào đây để nhận Feedback qua Email:
+        const ADMIN_EMAIL = "dien_gmail_cua_ban_vao_day@gmail.com"; 
+
+        // CÁCH 2 (Tùy chọn): Nếu bạn dùng Discord, dán link Webhook vào đây để nhận thông báo đẩy tức thì:
+        const DISCORD_WEBHOOK_URL = ""; 
+
+        // =========================================================
+        // CẤU HÌNH NHẬN THÔNG BÁO FEEDBACK TỰ ĐỘNG CHO ADMIN
+        // =========================================================
+        const ADMIN_EMAIL = "dien_gmail_cua_ban_vao_day@gmail.com"; 
+        const DISCORD_WEBHOOK_URL = ""; 
+
         function submitOneWayFeedback(event) {
             event.preventDefault();
             const charInput = document.getElementById('fbCharName');
@@ -1690,7 +1705,7 @@
             }
 
             // 4. Tự động gửi ngầm về Discord của bạn ở phía sau (nếu có dùng)
-            if (DISCORD_WEBHOOK_URL && DISCORD_WEBHOOK_URL.startsWith("https://discord.com/api/webhooks/1563602844399960084/B69U52NuboGcM0kUP6_gTKR1PCzZKZQ-xAlj24FskX2-AxCSLVCtKyPSgKCleRIJXqzj")) {
+            if (DISCORD_WEBHOOK_URL && DISCORD_WEBHOOK_URL.startsWith("https://discord.com/api/webhooks/")) {
                 fetch(DISCORD_WEBHOOK_URL.trim(), {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -2154,7 +2169,7 @@
             showToast('Đã xóa nhân vật.');
         }
 
-        // TÍNH NĂNG ĐẶC BIỆT: XUẤT FILE INDEX.HTML CHUẨN (TỰ ĐỘNG ẨN ADMIN KHI KHÁCH VÀO)
+        /// TÍNH NĂNG ĐẶC BIỆT: XUẤT FILE INDEX.HTML CHUẨN (TỰ ĐỘNG ẨN ADMIN KHI KHÁCH VÀO)
         function exportReadyWebFile() {
             if (!isAdmin) return;
 
